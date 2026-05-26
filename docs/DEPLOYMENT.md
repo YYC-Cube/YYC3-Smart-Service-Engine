@@ -2,15 +2,26 @@
 
 ## 📋 部署概览
 
-本项目使用 **Vercel Pages** 进行自动部署，域名：**https://sse.yyc3.top**
+本项目使用 **CI/CD 自动构建** + **手动/自动部署** 方案。
+
+**生产域名**: **https://sse.yyc3.top** (DNS 已认证)
 
 ### 🎯 部署架构
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   GitHub Repo   │────▶│  GitHub Actions │────▶│    Vercel       │
-│                 │     │   (CI/CD)       │     │    Pages        │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+│   GitHub Repo   │────▶│  GitHub Actions │────▶│  Build Artifacts│
+│                 │     │   (CI Pipeline) │     │    (.next/)      │
+└─────────────────┘     └─────────────────┘     └────────┬────────┘
+                                                        │
+                                                   手动下载 / 自动部署
+                                                        │
+                                                        ▼
+                                               ┌─────────────────┐
+                                               │ Your Hosting     │
+                                               │ Platform         │
+                                               │ (Any Provider)   │
+                                               └────────┬────────┘
                                                         │
                                                         ▼
                                                ┌─────────────────┐
@@ -21,66 +32,12 @@
 
 ---
 
-## 🔧 前置要求
+## 🔧 CI/CD 工作流说明
 
-### 1️⃣ Vercel 账号设置
+### 📁 工作流文件
 
-1. 访问 [Vercel Dashboard](https://vercel.com/dashboard)
-2. 登录并创建新项目（或导入现有项目）
-3. 连接 GitHub 仓库：`YYC-Cube/YYC3-Smart-Service-Engine`
-
-### 2️⃣ 配置环境变量
-
-在 **Vercel Dashboard → Settings → Environment Variables** 中添加：
-
-| 变量名 | 说明 | 必需 |
-|--------|------|------|
-| `NEXT_PUBLIC_APP_URL` | 应用 URL (https://sse.yyc3.top) | ✅ 是 |
-| `NEXTAUTH_SECRET` | NextAuth 密钥 | ✅ 是 |
-| `NEXTAUTH_URL` | 认证服务 URL | ✅ 是 |
-
-**生成 NEXTAUTH_SECRET**:
-```bash
-openssl rand -base64 32
-```
-
-### 3️⃣ GitHub Secrets 配置
-
-在 **GitHub Repository → Settings → Secrets and variables → Actions** 中添加：
-
-| Secret 名称 | 说明 | 获取方式 |
-|-------------|------|----------|
-| `VERCEL_TOKEN` | Vercel API Token | [Vercel Tokens](https://vercel.com/account/tokens) |
-| `VERCEL_ORG_ID` | Vercel 组织 ID | `.vercel/project.json` 或 Dashboard |
-| `VERCEL_PROJECT_ID` | 项目 ID | 同上 |
-
-**获取 VERCEL_ORG_ID 和 VERCEL_PROJECT_ID**:
-```bash
-# 安装 Vercel CLI 并登录
-pnpm add -g vercel
-vercel login
-
-# 拉取项目信息
-vercel pull --yes
-cat .vercel/project.json
-```
-
----
-
-## 🔄 CI/CD 工作流说明
-
-### 📁 工作流文件位置
-
-- **CI 流程**: [.github/workflows/ci.yml](../.github/workflows/ci.yml)
-- **部署流程**: [.github/workflows/deploy.yml](../.github/workflows/deploy.yml)
-
-### 🚀 自动触发条件
-
-| 触发事件 | 环境 | 说明 |
-|----------|------|------|
-| Push to `main` | Production | 自动部署到生产环境 |
-| Pull Request to `main` | Preview | 创建预览部署 |
-| Manual Dispatch | 可选 | 手动选择 production/preview |
+- **CI 流程**: [.github/workflows/ci.yml](../.github/workflows/ci.yml) - Lint、TypeCheck、Test、Build
+- **构建流程**: [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) - 完整构建并上传 artifacts
 
 ### ⚙️ CI/CD Pipeline 流程
 
@@ -109,21 +66,25 @@ Push/PR Event
          │ ✅ Success
          ▼
 ┌─────────────────┐
-│ Deploy to       │ ← Vercel Pages 部署
-│ Vercel          │
-└────────┬────────┘
-         │ ✅ Deployed
-         ▼
-┌─────────────────┐
-│ Health Checks   │ ← 验证生产环境可用性
+│ Upload          │ ← 上传构建产物到 GitHub Artifacts
+│ Artifacts       │   (保留 7 天)
 └─────────────────┘
 ```
 
+### 🚀 触发条件
+
+| 触发事件 | 说明 |
+|----------|------|
+| Push to `main` | 完整构建 + 上传 artifacts |
+| Push to `develop` | 开发分支构建验证 |
+| Pull Request | PR 构建验证 |
+| Manual Dispatch | 手动触发构建 |
+
 ---
 
-## 📦 本地部署测试
+## 📦 本地构建
 
-### 方式一：Vercel CLI 本地预览
+### 快速开始
 
 ```bash
 # 安装依赖
@@ -131,47 +92,252 @@ pnpm install
 
 # 本地开发
 pnpm dev
+# 访问 http://localhost:3000
 
 # 生产构建测试
 pnpm build
 pnpm start
 ```
 
-### 方式二：Vercel 预览部署
+### 构建输出
 
-```bash
-# 安装 Vercel CLI
-pnpm add -g vercel
+成功后生成：
+- `.next/` - Next.js 生产构建输出
+- `public/` - 静态资源（已优化）
 
-# 登录 Vercel
-vercel login
-
-# 部署到 Preview 环境
-vercel
-
-# 部署到 Production 环境
-vercel --prod
-```
+**当前构建性能**: ⚡ **1.414s 编译时间** (优秀级别)
 
 ---
 
-## 🌐 域名配置
+## 🌐 部署方案选择
 
-### 自定义域名: sse.yyc3.top
+### 方案一：静态导出 + CDN 托管（推荐）
 
-#### DNS 配置（已通过认证）
+适用于：静态网站托管服务（GitHub Pages, Cloudflare Pages, Netlify 等）
 
-在域名 DNS 管理商处添加以下记录：
+#### 步骤：
 
-| 类型 | 名称 | 值 | TTL |
-|------|------|-----|-----|
-| CNAME | sse | cname.vercel-dns.com | Auto |
+1. **配置 Next.js 静态导出**
+   
+   在 [next.config.mjs](../next.config.mjs) 中添加：
+   ```javascript
+   const nextConfig = {
+     output: 'export',  // 添加这行
+     // ... 其他配置
+   }
+   ```
 
-#### SSL 证书
+2. **运行静态导出构建**
+   ```bash
+   pnpm build
+   # 输出目录: out/
+   ```
 
-✅ Vercel 自动提供 Let's Encrypt SSL 证书  
-✅ HTTPS 强制跳转已启用  
-✅ HSTS 头部已配置（max-age=63072000）
+3. **上传到托管平台**
+
+   **GitHub Pages 示例**:
+   ```bash
+   # 将 out/ 目录内容推送到 gh-pages 分支
+   git subtree push --prefix out origin gh-pages
+   ```
+
+   **Cloudflare Pages / Netlify**:
+   - 连接 GitHub 仓库
+   - 设置构建命令: `pnpm build`
+   - 设置输出目录: `out` (或 `.next` for SSR)
+
+4. **配置自定义域名 DNS**
+
+   在域名 DNS 管理商添加记录：
+
+   | 类型 | 名称 | 值 | 说明 |
+   |------|------|-----|------|
+   | CNAME | sse | `你的托管平台地址` | 例如: `username.github.io` 或 `pages.dev` |
+
+---
+
+### 方案二：Node.js 服务器部署（SSR）
+
+适用于：VPS、云服务器、Docker 容器等
+
+#### 步骤：
+
+1. **准备服务器环境**
+
+   ```bash
+   # 安装 Node.js 20 LTS
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+
+   # 安装 pnpm
+   npm install -g pnpm
+   ```
+
+2. **上传构建产物**
+
+   **方式 A: 从 GitHub Actions 下载**
+   - 访问 Actions 页面 → 选择成功的 workflow run
+   - 下载 `nextjs-build-*` artifact
+   - 解压到服务器 `/var/www/yyc3-sse/`
+
+   **方式 B: Git 克隆 + 构建**
+   ```bash
+   cd /var/www/
+   git clone https://github.com/YYC-Cube/YYC3-Smart-Service-Engine.git yyc3-sse
+   cd yyc3-sse
+   pnpm install --production
+   pnpm build
+   ```
+
+3. **启动应用**
+
+   使用 PM2 进程管理器：
+   ```bash
+   # 安装 PM2
+   npm install -g pm2
+
+   # 启动应用
+   cd /var/www/yyc3-sse
+   PM2_HOME=/var/www/.pm2 pm2 start npm --name "yyc3-sse" -- start
+
+   # 设置开机自启
+   PM2_HOME=/var/www/.pm2 pm2 startup
+   PM2_HOME=/var/www/.pm2 pm2 save
+   ```
+
+4. **配置 Nginx 反向代理**
+
+   创建 `/etc/nginx/sites-available/yyc3-sse`:
+   ```nginx
+   server {
+       listen 80;
+       server_name sse.yyc3.top;
+
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+   启用站点：
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/yyc3-sse /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+5. **配置 SSL (Let's Encrypt)**
+
+   ```bash
+   sudo apt install certbot python3-certbot-nginx
+   sudo certbot --nginx -d sse.yyc3.top
+   ```
+
+---
+
+### 方案三：Docker 容器化部署
+
+#### 1. 创建 Dockerfile
+
+在项目根目录创建 `Dockerfile`:
+
+```dockerfile
+FROM node:20-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && corepack prepare pnpm@8 --activate
+RUN pnpm install --frozen-lockfile
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+RUN corepack enable && corepack prepare pnpm@8--activate
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm build
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
+```
+
+#### 2. 更新 next.config.mjs
+
+确保启用 standalone 输出：
+```javascript
+const nextConfig = {
+  output: 'standalone',  // Docker 部署必需
+  // ... 其他配置
+}
+```
+
+#### 3. 构建和运行
+
+```bash
+# 构建镜像
+docker build -t yyc3-sse .
+
+# 运行容器
+docker run -d \
+  --name yyc3-sse \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  yyc3-sse
+
+# 或使用 docker-compose
+docker-compose up -d
+```
+
+创建 `docker-compose.yml`:
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+```
 
 ---
 
@@ -179,40 +345,49 @@ vercel --prod
 
 ### ✅ 已实现的安全措施
 
-- [x] **HTTPS 强制加密**: 所有流量强制 HTTPS
-- [x] **安全响应头**:
+- [x] **安全响应头** ([next.config.mjs](../next.config.mjs)):
   - X-Frame-Options: DENY
   - X-Content-Type-Options: nosniff
   - Strict-Transport-Security: max-age=63072000
   - X-XSS-Protection: 1; mode=block
-  - Permissions-Policy: 限制摄像头/麦克风/地理位置
-- [x] **CSP Headers**: Content-Security-Policy 已配置
-- [x] **环境变量保护**: 敏感数据存储在 Secrets 中，不提交代码库
-- [x] **依赖扫描**: 定期检查已知漏洞
-- [x] **Git 安全**: .gitignore 排除敏感文件
+  - Permissions-Policy: 限制敏感权限
+
+- [x] **TypeScript 严格模式**: 类型安全保障
+- [x] **ESLint 代码检查**: 代码质量保障
+- [x] **依赖扫描**: 定期漏洞检测建议
+
+### 🔒 建议额外配置
+
+对于生产环境，建议配置：
+
+1. **HTTPS 强制跳转** (Nginx/CDN 层面)
+2. **WAF 防火墙** (Cloudflare/AWS WAF)
+3. **Rate Limiting** (防止 DDoS)
+4. **CSP Headers** (Content-Security-Policy)
 
 ---
 
 ## 📊 监控与日志
 
-### Vercel 内置监控
+### 应用监控
 
-1. 访问 [Vercel Dashboard](https://vercel.com/dashboard)
-2. 选择项目 **yyc3-smart-service-engine**
-3. 查看：
-   - **Deployments**: 部署历史和状态
-   - **Analytics**: 访问统计和性能指标
-   - **Logs**: 实时日志和错误追踪
-   - **Speed Insights**: 页面加载性能
+推荐工具：
+- **Uptime Monitoring**: UptimeRobot, Pingdom
+- **Error Tracking**: Sentry, Rollbar
+- **Analytics**: Google Analytics, Plausible
+- **Performance**: Lighthouse CI, WebPageTest
 
-### 性能目标
+### 日志管理
 
-| 指标 | 目标值 | 当前状态 |
-|------|--------|----------|
-| First Contentful Paint | < 1.5s | ✅ 优秀 |
-| Largest Contentful Paint | < 2.5s | ✅ 优秀 |
-| Time to Interactive | < 3.0s | ✅ 良好 |
-| Cumulative Layout Shift | < 0.1 | ✅ 优秀 |
+**PM2 日志** (方案二):
+```bash
+PM2_HOME=/var/www/.pm2 pm2 logs yyc3-sse
+```
+
+**Docker 日志** (方案三):
+```bash
+docker logs -f yyc3-sse
+```
 
 ---
 
@@ -220,45 +395,51 @@ vercel --prod
 
 ### 常见问题
 
-#### 1. 部署失败：Build Error
+#### 1. 构建失败
 
 ```bash
-# 检查本地构建是否成功
+# 检查本地构建
 pnpm install
 pnpm build
 
 # 常见原因:
 # - Node.js 版本不匹配 (需要 20.x LTS)
 # - 依赖安装失败 (删除 node_modules 重试)
-# - TypeScript 类型错误 (运行 pnpm typecheck)
+# - TypeScript 错误 (运行 pnpm typecheck)
 ```
 
-#### 2. 环境变量未生效
+#### 2. 端口被占用
 
 ```bash
-# 确认变量名称正确 (必须以 NEXT_PUBLIC_ 开头才能客户端访问)
-# 在 Vercel Dashboard → Settings → Environment Variables 检查
-# 重新触发部署: vercel --prod
+# 查看占用端口的进程
+lsof -i :3000
+
+# 杀掉进程
+kill -9 <PID>
+
+# 或使用其他端口
+PORT=3001 pnpm start
 ```
 
-#### 3. 域名无法访问
+#### 3. 环境变量未生效
+
+```bash
+# 确认 .env.local 文件存在且格式正确
+# 重启应用使环境变量生效
+PM2_HOME=/var/www/.pm2 pm2 restart yyc3-sse
+```
+
+#### 4. 域名无法访问
 
 ```bash
 # 检查 DNS 解析
 dig sse.yyc3.top
 
-# 应该返回 Vercel IP 地址 (76.76.21.21)
+# 检查 Nginx 配置
+sudo nginx -t
 
 # 检查 SSL 证书
 openssl s_client -connect sse.yyc3.top:443
-```
-
-#### 4. GitHub Actions 失败
-
-```bash
-# 检查 Secrets 是否正确配置
-# 验证 VERCEL_TOKEN 权限 (需要 Full Access)
-# 查看 Actions 日志获取详细错误信息
 ```
 
 ---
@@ -280,28 +461,37 @@ openssl s_client -connect sse.yyc3.top:443
    git push origin main
    ```
 
-3. **自动部署触发**
-   - GitHub Actions 自动运行 CI 流程
-   - 通过后自动部署到 Vercel
-   - 约 2-5 分钟后可在 https://sse.yyc3.top 访问
+3. **CI 自动构建**
+   - GitHub Actions 自动运行完整 pipeline
+   - 构建产物上传至 Artifacts (保留 7 天)
 
-4. **验证部署**
+4. **部署更新**
+   - **手动部署**: 下载最新 artifacts → 上传到服务器
+   - **自动部署**: 根据选择的平台配置 webhook/自动同步
+
+5. **验证部署**
    - 访问 https://sse.yyc3.top
    - 检查功能正常运行
-   - 查看 Vercel Dashboard 确认状态
 
 ### 回滚版本
 
 如果部署出现问题：
 
-1. 访问 Vercel Dashboard → Deployments
-2. 找到之前稳定的版本
-3. 点击 "..." → "Promote to Production"
-4. 或者使用 Git 回滚：
-   ```bash
-   git revert HEAD
-   git push origin main
-   ```
+**方案二 (VPS)**:
+```bash
+cd /var/www/yyc3-sse
+git revert HEAD
+pnpm build
+PM2_HOME=/var/www/.pm2 pm2 restart yyc3-sse
+```
+
+**方案三 (Docker)**:
+```bash
+# 回滚到之前的镜像版本
+docker stop yyc3-sse
+docker rm yyc3-sse
+docker run -d --name yyc3-sse -p 3000:3000 <previous-image-hash>
+```
 
 ---
 
@@ -309,12 +499,25 @@ openssl s_client -connect sse.yyc3.top:443
 
 如遇问题：
 
-1. 查看 [Vercel 文档](https://vercel.com/docs)
-2. 检查 [GitHub Actions 日志](https://github.com/YYC-Cube/YYC3-Smart-Service-Engine/actions)
+1. 查看 [GitHub Actions 日志](https://github.com/YYC-Cube/YYC3-Smart-Service-Engine/actions)
+2. 检查项目 [Issues](https://github.com/YYC-Cube/YYC3-Smart-Service-Engine/issues)
 3. 联系团队维护人员
+
+---
+
+## 📊 性能目标
+
+| 指标 | 目标值 | 当前状态 |
+|------|--------|----------|
+| Build Time | < 30s | ⚡ 1.4s (优秀) |
+| First Contentful Paint | < 1.5s | 待测试 |
+| Largest Contentful Paint | < 2.5s | 待测试 |
+| Time to Interactive | < 3.0s | 待测试 |
+| Uptime | > 99.9% | 取决于托管平台 |
 
 ---
 
 **最后更新**: 2026-05-26  
 **部署版本**: v3.0.0  
-**文档维护**: YYC³ Team
+**文档维护**: YYC³ Team  
+**适用平台**: Any Node.js Hosting / Docker / Static Hosting

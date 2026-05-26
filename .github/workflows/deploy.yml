@@ -1,26 +1,15 @@
-name: Deploy to Vercel
+name: Build and Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - preview
-
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  deploy:
-    name: Deploy to Vercel
+  build-and-test:
+    name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     
@@ -39,62 +28,62 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install Vercel CLI
-        run: pnpm add -g vercel
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=${{ github.event.inputs.environment || 'production' }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Run linting
+        run: pnpm lint
 
-      - name: Build Project Artifacts
-        run: vercel build --prod
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Check formatting
+        run: pnpm format:check
 
-      - name: Deploy Project Artifacts to Vercel
-        id: deploy
-        run: |
-          if [ "${{ github.event.inputs.environment }}" == "preview" ] || [ "${{ github.ref }}" != "refs/heads/main" ]; then
-            echo "deploying_preview=true" >> $GITHUB_OUTPUT
-            vercel deploy --prebuilt
-          else
-            echo "deploying_production=true" >> $GITHUB_OUTPUT
-            vercel deploy --prebuilt --prod
-          fi
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Type check
+        run: pnpm typecheck
 
-      - name: Comment PR with deployment URL
-        if: github.event_name == 'pull_request' && steps.deploy.outputs.deploying_preview == 'true'
-        uses: actions/github-script@v7
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const { data: comment } = await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `🚀 **Deployment Preview Ready!**\n\n✅ Deployment URL: ${{ steps.deploy.outputs.url }}\n\nThis preview will be updated on every commit to this branch.`
-            })
+          name: nextjs-build-${{ github.sha }}
+          path: |
+            .next/
+            public/
+            package.json
+            pnpm-lock.yaml
+          retention-days: 7
 
-  post-deploy-checks:
-    name: Post-Deploy Health Checks
-    needs: deploy
+      - name: Upload coverage report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: coverage/
+          retention-days: 7
+
+  deploy-notification:
+    name: Deployment Notification
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && success()
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     steps:
-      - name: Check Production Deployment
+      - name: Deployment Summary
         run: |
-          echo "🎉 Production deployment completed successfully!"
-          echo "🌐 Domain: https://sse.yyc3.top"
-          echo "📊 Status: Live"
-          
-      - name: Notify Success
-        if: success()
-        run: |
-          echo "✅ YYC³ Smart Service Engine deployed to production"
-          echo "🔗 URL: https://sse.yyc3.top"
+          echo "🎉 **Build Successful!**"
+          echo ""
+          echo "📦 **Build Artifacts Ready**"
+          echo "- Next.js build output uploaded"
+          echo "- Coverage report generated"
+          echo ""
+          echo "🌐 **Deployment Target**: https://sse.yyc3.top"
+          echo ""
+          echo "📊 **Next Steps**:"
+          echo "1. Download build artifacts from this workflow run"
+          echo "2. Deploy to your hosting platform"
+          echo "3. Verify at https://sse.yyc3.top"
