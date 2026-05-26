@@ -385,7 +385,7 @@ export default function SmartFormSystem() {
 
     setFormTemplates(templates)
     setFormSubmissions(submissions)
-    setSelectedTemplate(templates[0])
+    setSelectedTemplate(templates[0] || null)
   }
 
   // AI智能填充建议
@@ -674,7 +674,6 @@ export default function SmartFormSystem() {
 
     const errors = validateForm(selectedTemplate, formData)
     if (Object.keys(errors).length > 0) {
-      console.log("表单验证失败:", errors)
       return
     }
 

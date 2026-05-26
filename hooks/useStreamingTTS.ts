@@ -65,7 +65,7 @@ export function useStreamingTTS(config: UseStreamingTTSConfig = {}): UseStreamin
   const [currentText, setCurrentText] = useState<string | null>(null)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [queue, setQueue] = useState<SpeechQueueItem[]>([])
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null | undefined>(null)
   const [rate, setRateState] = useState(1)
   const [pitch, setPitchState] = useState(1)
   const [volume, setVolumeState] = useState(1)
@@ -247,7 +247,7 @@ export function useStreamingTTS(config: UseStreamingTTSConfig = {}): UseStreamin
 
       for (let i = 0; i < chunks.length; i++) {
         yield {
-          text: chunks[i],
+          text: chunks[i] || '',
           index: i,
           timestamp: new Date(),
         }

@@ -24,17 +24,14 @@ interface EnhancedVoiceInterfaceProps {
 export function EnhancedVoiceInterface({
   onVoiceInput,
   onVoiceOutput,
-  autoSpeak = false,
+  autoSpeak: _autoSpeak,
 }: EnhancedVoiceInterfaceProps) {
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [confidence, setConfidence] = useState(0);
   const [voiceHistory, setVoiceHistory] = useState<
     Array<{ text: string; type: 'input' | 'output'; timestamp: Date }>
   >([]);
   const [volume, setVolume] = useState(0);
-  const [isSupported, setIsSupported] = useState(true);
 
   const [voiceRate, setVoiceRate] = useState(1);
   const [voicePitch, setVoicePitch] = useState(1);
@@ -44,7 +41,9 @@ export function EnhancedVoiceInterface({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  const lastProcessedTranscriptRef = useRef<string>('');
+  const [visualizationBars, setVisualizationBars] = useState<number[]>(Array.from({ length: 64 }, () => 8));
 
   const {
     isListening: voiceIsListening,
@@ -66,6 +65,11 @@ export function EnhancedVoiceInterface({
     setPitch,
     setVolume: setTTSVolume,
   } = useTextToSpeech();
+
+  // ✅ 使用派生状态替代 useEffect setState - 解决 React 19 严格模式警告
+  const isListening = voiceIsListening;
+  const isSpeaking = ttsIsSpeaking;
+  const isSupported = voiceSupported && typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   const setupAudioVisualization = useCallback(async () => {
     try {
@@ -115,21 +119,38 @@ export function EnhancedVoiceInterface({
 
   // 开始语音识别
   const handleStartListening = useCallback(async () => {
-    setIsListening(true);
     await setupAudioVisualization();
     startListening();
   }, [setupAudioVisualization, startListening]);
 
   // 停止语音识别
   const handleStopListening = useCallback(() => {
-    setIsListening(false);
     cleanupAudio();
     stopListening();
   }, [cleanupAudio, stopListening]);
 
-  // 处理语音输入
+  // ✅ 更新可视化柱状图 - 订阅定时器外部系统
+  /* eslint-disable react-hooks/set-state-in-effect -- 定时器和事件回调中的状态更新是合理的 */
   useEffect(() => {
-    if (voiceTranscript && voiceTranscript !== transcript) {
+    if (isListening) {
+      const interval = setInterval(() => {
+        setVisualizationBars(
+          Array.from({ length: 64 }, (_, i) =>
+            Math.max(8, volume * 100 + Math.random() * 30 + Math.sin(Date.now() / 100 + i) * 10)
+          )
+        );
+      }, 100);
+
+      return () => clearInterval(interval);
+    } else {
+      setVisualizationBars(Array.from({ length: 64 }, () => 8));
+    }
+  }, [isListening, volume]);
+
+  // 处理语音输入 - 使用 ref 避免重复处理
+  useEffect(() => {
+    if (voiceTranscript && voiceTranscript !== lastProcessedTranscriptRef.current) {
+      lastProcessedTranscriptRef.current = voiceTranscript;
       setTranscript(voiceTranscript);
       setConfidence(voiceConfidence);
 
@@ -143,22 +164,8 @@ export function EnhancedVoiceInterface({
         onVoiceInput(voiceTranscript, voiceConfidence);
       }
     }
-  }, [voiceTranscript, transcript, voiceConfidence, onVoiceInput]);
-
-  // 同步语音识别状态
-  useEffect(() => {
-    setIsListening(voiceIsListening);
-  }, [voiceIsListening]);
-
-  // 同步TTS状态
-  useEffect(() => {
-    setIsSpeaking(ttsIsSpeaking);
-  }, [ttsIsSpeaking]);
-
-  // 检查浏览器支持
-  useEffect(() => {
-    setIsSupported(voiceSupported && 'speechSynthesis' in window);
-  }, [voiceSupported]);
+  }, [voiceTranscript, voiceConfidence, onVoiceInput]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // 语音输出
   const handleSpeak = useCallback(
@@ -185,7 +192,7 @@ export function EnhancedVoiceInterface({
 
   useEffect(() => {
     if (voices.length > 0 && selectedVoiceIndex < voices.length) {
-      setVoice(voices[selectedVoiceIndex]);
+      setVoice(voices[selectedVoiceIndex]!);
     }
   }, [selectedVoiceIndex, voices, setVoice]);
 
@@ -248,26 +255,18 @@ export function EnhancedVoiceInterface({
           <div className="flex justify-center">
             <div className="relative w-full max-w-2xl h-40 bg-gradient-to-br from-slate-900/80 to-slate-800/80 rounded-xl border border-slate-600/50 overflow-hidden shadow-2xl">
               <div className="absolute inset-0 flex items-end justify-center space-x-1 p-4">
-                {Array.from({ length: 64 }).map((_, i) => {
-                  const height = isListening
-                    ? Math.max(
-                        8,
-                        volume * 100 + Math.random() * 30 + Math.sin(Date.now() / 100 + i) * 10
-                      )
-                    : 8;
-                  return (
-                    <div
-                      key={i}
-                      className="bg-gradient-to-t from-cyan-500 via-blue-500 to-purple-500 rounded-sm transition-all duration-100 shadow-lg"
-                      style={{
-                        width: '4px',
-                        height: `${height}%`,
-                        opacity: isListening ? 0.9 : 0.3,
-                        boxShadow: isListening ? `0 0 10px rgba(6, 182, 212, ${volume})` : 'none',
-                      }}
-                    />
-                  );
-                })}
+                {visualizationBars.map((height, i) => (
+                  <div
+                    key={i}
+                    className="bg-gradient-to-t from-cyan-500 via-blue-500 to-purple-500 rounded-sm transition-all duration-100 shadow-lg"
+                    style={{
+                      width: '4px',
+                      height: `${height}%`,
+                      opacity: isListening ? 0.9 : 0.3,
+                      boxShadow: isListening ? `0 0 10px rgba(6, 182, 212, ${volume})` : 'none',
+                    }}
+                  />
+                ))}
               </div>
               {isListening && (
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 animate-pulse" />
@@ -348,7 +347,7 @@ export function EnhancedVoiceInterface({
                   </div>
                   <Slider
                     value={[voiceRate]}
-                    onValueChange={([value]) => setVoiceRate(value)}
+                    onValueChange={([value]) => setVoiceRate(value ?? 1)}
                     min={0.5}
                     max={2}
                     step={0.1}
@@ -362,7 +361,7 @@ export function EnhancedVoiceInterface({
                   </div>
                   <Slider
                     value={[voicePitch]}
-                    onValueChange={([value]) => setVoicePitch(value)}
+                    onValueChange={([value]) => setVoicePitch(value ?? 1)}
                     min={0.5}
                     max={2}
                     step={0.1}
@@ -376,7 +375,7 @@ export function EnhancedVoiceInterface({
                   </div>
                   <Slider
                     value={[voiceVolume]}
-                    onValueChange={([value]) => setVoiceVolume(value)}
+                    onValueChange={([value]) => setVoiceVolume(value ?? 0.5)}
                     min={0}
                     max={1}
                     step={0.1}

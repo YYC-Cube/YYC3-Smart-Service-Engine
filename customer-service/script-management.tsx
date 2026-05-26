@@ -710,9 +710,9 @@ export default function ScriptManagement() {
                           <div className="flex items-center space-x-2 mb-2">
                             <Badge
                               variant="secondary"
-                              className={`${categoryInfo.color} text-white text-xs px-1.5 py-0`}
+                              className={`${categoryInfo?.color || 'bg-gray-500'} text-white text-xs px-1.5 py-0`}
                             >
-                              {categoryInfo.name}
+                              {categoryInfo?.name || '未分类'}
                             </Badge>
                             <span className="text-xs text-slate-400">使用 {script.usage} 次</span>
                           </div>
@@ -889,10 +889,8 @@ function ScriptEditor({
   }
 
   const handleSave = () => {
-    const success = onSave(editedScript)
-    if (success) {
-      setPreviewMode(false)
-    }
+    onSave(editedScript)
+    setPreviewMode(false)
   }
 
   const renderPreview = () => {
@@ -930,8 +928,8 @@ function ScriptEditor({
               <CardTitle className="text-white truncate">{script.title}</CardTitle>
             )}
 
-            <Badge variant="secondary" className={`${getCategoryInfo(script.category).color} text-white`}>
-              {getCategoryInfo(script.category).name}
+            <Badge variant="secondary" className={`${getCategoryInfo(script.category)?.color || 'bg-gray-500'} text-white`}>
+              {getCategoryInfo(script.category)?.name || '未分类'}
             </Badge>
 
             <Badge variant="outline" className={`${script.isActive ? "text-green-400 border-green-500/50" : "text-red-400 border-red-500/50"}`}>

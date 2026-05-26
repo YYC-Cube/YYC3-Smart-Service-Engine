@@ -1,8 +1,8 @@
 "use client"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import SmartCustomerService from "@/components/customer-service/smart-customer-service"
-import ScriptManagement from "@/components/customer-service/script-management"
-import SofaSalesSystem from "@/components/customer-service/sofa-sales-system"
+import SmartCustomerService from "@/customer-service/smart-customer-service"
+import ScriptManagement from "@/customer-service/script-management"
+import SofaSalesSystem from "@/customer-service/sofa-sales-system"
 
 export default function CustomerServicePage() {
   return (

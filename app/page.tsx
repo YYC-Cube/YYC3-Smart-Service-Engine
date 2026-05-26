@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { EnhancedVoiceInterface } from '@/components/enhanced-voice-interface';
 import { EnhancedImageGenerator } from '@/components/enhanced-image-generator';
+import type { ImageGenerationResult } from '@/components/enhanced-image-generator';
 import { useAIContext } from '@/hooks/useAIContext';
 
 type AppState = 'splash' | 'main';
@@ -267,8 +268,7 @@ export default function Dashboard() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // 图像生成进度
-  const [imageGenerationProgress, setImageGenerationProgress] = useState(0);
+  const [, setImageGenerationProgress] = useState(0);
 
   // 系统监控
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
@@ -282,13 +282,9 @@ export default function Dashboard() {
 
   // AI上下文管理
   const {
-    context,
     addMessage,
-    updateContext,
     analyzeIntent,
     generateContextualResponse,
-    getRelevantHistory,
-    clearContext,
   } = useAIContext();
 
   // 功能模块系统
@@ -898,13 +894,13 @@ export default function Dashboard() {
   );
 
   // 处理语音输出
-  const handleVoiceOutput = useCallback((text: string) => {
-    console.log('语音输出:', text);
+  const handleVoiceOutput = useCallback((_text: string) => {
+    // 语音输出处理
   }, []);
 
   // 处理图像生成
   const handleImageGenerated = useCallback(
-    (result: any) => {
+    (result: ImageGenerationResult) => {
       const imageMessage: ChatMessage = {
         id: `msg_${Date.now()}_image`,
         type: 'ai',

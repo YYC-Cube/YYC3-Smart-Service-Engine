@@ -342,20 +342,20 @@ export function CustomerLifecycleManager() {
     ]
 
     // 根据客户特征调整计划
-    if (customer.urgencyLevel === "high") {
+    if (customer?.urgencyLevel === "high") {
       baseStages.forEach((stage) => {
         stage.duration = Math.ceil(stage.duration * 0.7) // 紧急客户缩短30%时间
       })
     }
 
-    if (customer.familyStructure === "三口之家") {
-      baseStages[1].actions.push("儿童房设计需求确认")
-      baseStages[2].actions.push("儿童安全材料推荐")
+    if (customer?.familyStructure === "三口之家") {
+      baseStages[1]?.actions?.push("儿童房设计需求确认")
+      baseStages[2]?.actions?.push("儿童安全材料推荐")
     }
 
-    if (customer.familyStructure.includes("老人")) {
-      baseStages[1].actions.push("无障碍设计需求调研")
-      baseStages[2].actions.push("适老化改造方案")
+    if (customer?.familyStructure?.includes("老人")) {
+      baseStages[1]?.actions?.push("无障碍设计需求调研")
+      baseStages[2]?.actions?.push("适老化改造方案")
     }
 
     return {
@@ -975,7 +975,7 @@ export function CustomerLifecycleManager() {
                   <div className="lg:col-span-3">
                     <h4 className="text-sm font-medium text-slate-300 mb-4">客户孵化计划示例 - 张先生</h4>
                     <div className="space-y-4">
-                      {generateIncubationPlan(customers[0]).stages.map((stage, index) => (
+                      {generateIncubationPlan(customers[0]!).stages.map((stage, index) => (
                         <div key={index} className="flex items-start space-x-4">
                           <div className="flex flex-col items-center">
                             <div

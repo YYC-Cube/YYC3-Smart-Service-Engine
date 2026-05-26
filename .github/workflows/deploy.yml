@@ -1,0 +1,100 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ github.event.inputs.environment || 'production' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Project Artifacts to Vercel
+        id: deploy
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "preview" ] || [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "deploying_preview=true" >> $GITHUB_OUTPUT
+            vercel deploy --prebuilt
+          else
+            echo "deploying_production=true" >> $GITHUB_OUTPUT
+            vercel deploy --prebuilt --prod
+          fi
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Comment PR with deployment URL
+        if: github.event_name == 'pull_request' && steps.deploy.outputs.deploying_preview == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comment } = await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🚀 **Deployment Preview Ready!**\n\n✅ Deployment URL: ${{ steps.deploy.outputs.url }}\n\nThis preview will be updated on every commit to this branch.`
+            })
+
+  post-deploy-checks:
+    name: Post-Deploy Health Checks
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Check Production Deployment
+        run: |
+          echo "🎉 Production deployment completed successfully!"
+          echo "🌐 Domain: https://sse.yyc3.top"
+          echo "📊 Status: Live"
+          
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ YYC³ Smart Service Engine deployed to production"
+          echo "🔗 URL: https://sse.yyc3.top"

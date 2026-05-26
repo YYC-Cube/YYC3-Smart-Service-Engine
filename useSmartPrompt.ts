@@ -7,7 +7,7 @@ import {
   fillTemplate,
   getPromptTemplate,
   getImagePromptTemplate,
-} from "@/config/prompt-templates"
+} from "@/prompt-templates"
 
 interface UseSmartPromptReturn {
   currentTemplate: PromptTemplate | ImagePromptTemplate | null
@@ -82,14 +82,14 @@ export function useSmartPrompt(): UseSmartPromptReturn {
   const isValid = useCallback(() => {
     if (!currentTemplate || !("variables" in currentTemplate)) return true
 
-    return currentTemplate.variables.every((variable) => variables[variable] && variables[variable].trim() !== "")
+    return currentTemplate.variables.every((variable: string) => variables[variable]?.trim() !== "")
   }, [currentTemplate, variables])
 
   // 获取缺失的变量
   const missingVariables = useCallback(() => {
     if (!currentTemplate || !("variables" in currentTemplate)) return []
 
-    return currentTemplate.variables.filter((variable) => !variables[variable] || variables[variable].trim() === "")
+    return currentTemplate.variables.filter((variable: string) => !variables[variable]?.trim())
   }, [currentTemplate, variables])
 
   return {
@@ -111,7 +111,7 @@ export function usePromptSuggestions() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const getSuggestions = useCallback(async (input: string, category?: string) => {
+  const getSuggestions = useCallback(async (input: string, _category?: string) => {
     if (!input.trim()) {
       setSuggestions([])
       return

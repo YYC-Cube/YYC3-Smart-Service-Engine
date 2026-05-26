@@ -22,7 +22,7 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
   const [isPaused, setIsPaused] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null | undefined>(null)
   const [rate, setRateState] = useState(1)
   const [pitch, setPitchState] = useState(1)
   const [volume, setVolumeState] = useState(1)
@@ -47,7 +47,7 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
           chineseVoices[0]
 
         if (preferredVoice) {
-          setSelectedVoice(preferredVoice)
+          setSelectedVoice(preferredVoice ?? null)
         } else if (availableVoices.length > 0) {
           setSelectedVoice(availableVoices[0])
         }

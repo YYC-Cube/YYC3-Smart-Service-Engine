@@ -26,7 +26,7 @@ export function useVoiceRecognition(): UseVoiceRecognitionReturn {
   const [error, setError] = useState<string | null>(null)
 
   const recognitionRef = useRef<any>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // 检查浏览器支持
   useEffect(() => {

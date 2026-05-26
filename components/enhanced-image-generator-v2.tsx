@@ -23,11 +23,11 @@ import { ImageIcon, Wand2, Loader2, CheckCircle2, XCircle, Clock, Zap, FileText,
 
 export function EnhancedImageGeneratorV2() {
   const imageGen = useEnhancedImageGenerator({
-    onGenerationStart: (config) => {
-      console.log('🎨 Generation started:', config.prompt)
+    onGenerationStart: (_config) => {
+      // 图像生成开始
     },
-    onGenerationComplete: (image) => {
-      console.log('✅ Image generated:', image.id)
+    onGenerationComplete: (_image) => {
+      // 图像生成完成
     },
     onError: (error, context) => {
       console.error(`❌ Error in ${context}:`, error.message)

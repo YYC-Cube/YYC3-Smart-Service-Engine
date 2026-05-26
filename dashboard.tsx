@@ -20,7 +20,7 @@ import {
   User,
   Palette,
 } from "lucide-react"
-import { TextToImageGenerator } from "./components/text-to-image/text-to-image-generator"
+import { TextToImageGenerator } from "@/text-to-image/text-to-image-generator"
 
 interface Message {
   id: string
@@ -56,7 +56,7 @@ const Particle: React.FC<ParticleProps> = ({ x, y, size, opacity }) => (
 
 const ParticleBackground: React.FC = () => {
   const [particles, setParticles] = useState<ParticleProps[]>([])
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     const createParticles = () => {
@@ -379,7 +379,7 @@ export default function Dashboard() {
             <div className="p-4 bg-slate-800/30 backdrop-blur-sm border-t border-slate-700/50">
               {activeTab === "image" && (
                 <TextToImageGenerator
-                  onImageGenerated={(imageUrl) => {
+                  onImageGenerated={(imageUrl: string) => {
                     const message: Message = {
                       id: Date.now().toString(),
                       type: "ai",

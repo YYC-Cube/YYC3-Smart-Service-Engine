@@ -64,7 +64,7 @@ export default function DigitalHumanCore() {
     currentEmotion: "neutral",
   })
 
-  const [currentCustomer, setCurrentCustomer] = useState<CustomerProfile>({
+  const [currentCustomer] = useState<CustomerProfile>({
     id: "CUST_001",
     name: "张先生",
     type: "A类客户",
@@ -195,12 +195,12 @@ export default function DigitalHumanCore() {
   // 智能话术推荐
   const getRecommendedScript = (customer: CustomerProfile): ScriptTemplate => {
     if (customer.scenario === "新房装修") {
-      return scriptTemplates[0]
+      return scriptTemplates[0]!
     }
     if (customer.concerns.includes("价格考虑")) {
-      return scriptTemplates[1]
+      return scriptTemplates[1]!
     }
-    return scriptTemplates[2]
+    return scriptTemplates[2]!
   }
 
   // 实时数据更新

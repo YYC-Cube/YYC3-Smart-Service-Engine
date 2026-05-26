@@ -13,7 +13,7 @@ export interface ConversationMessage {
     functionCall?: string
     tokens?: number
     model?: string
-    [key: string]: any
+    [key: string]: unknown
   }
 }
 
@@ -212,7 +212,7 @@ export function useEnhancedAIContext(
         .slice(0, 5)
         .map(([key]) => {
           const [type, value] = key.split(":")
-          return { type, value, confidence: 1 }
+          return { type: type || '', value: value || '', confidence: 1 }
         })
 
       const sentimentCounts = { positive: 0, negative: 0, neutral: 0 }
@@ -222,9 +222,9 @@ export function useEnhancedAIContext(
         }
       })
 
-      const dominantSentiment = Object.entries(sentimentCounts).sort(
+      const dominantSentiment = (Object.entries(sentimentCounts).sort(
         (a, b) => b[1] - a[1]
-      )[0][0] as SentimentType
+      )[0]?.[0] || 'neutral') as SentimentType
 
       const summary: ConversationSummary = {
         topic: extractTopic(allText, intents),
@@ -234,7 +234,7 @@ export function useEnhancedAIContext(
         messageCount: messages.length,
         duration:
           new Date().getTime() -
-          messages[0].timestamp.getTime(),
+          (messages[0]?.timestamp?.getTime() || 0),
         lastActive: new Date(),
       }
 
@@ -596,7 +596,7 @@ function extractKeyPoints(messages: ConversationMessage[]): string[] {
         .filter((s) => s.trim().length > 20)
 
       if (sentences.length > 0) {
-        points.push(sentences[0].trim())
+        points.push(sentences[0]?.trim() || '')
       }
     }
   })

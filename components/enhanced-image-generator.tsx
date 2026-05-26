@@ -18,7 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-interface ImageGenerationResult {
+export interface ImageGenerationResult {
   url: string;
   prompt: string;
   style: string;
@@ -163,11 +163,6 @@ export function EnhancedImageGenerator({
           : Number.parseInt(seed) || generateRandomSeed();
         const enhancedPrompt = enhancePromptText(prompt, style);
 
-        console.log(`生成第 ${i + 1}/${batchCount} 张图像...`);
-        console.log('增强提示词:', enhancedPrompt);
-        console.log('负面提示词:', negativePrompt);
-        console.log('参数:', { style, size, quality, steps: steps[0], seed: currentSeed });
-
         const imageUrl = await simulateImageGeneration(
           enhancedPrompt,
           currentSeed,
@@ -181,7 +176,7 @@ export function EnhancedImageGenerator({
           metadata: {
             size,
             quality,
-            steps: steps[0],
+            steps: steps[0] || 20,
             seed: currentSeed,
             model: 'YYC³-ImageGen-v2.0',
             timestamp: new Date(),
@@ -197,8 +192,6 @@ export function EnhancedImageGenerator({
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
-
-      console.log(`成功生成 ${results.length} 张图像`);
     } catch (error) {
       if (error instanceof Error && error.message !== 'Generation cancelled') {
         console.error('图像生成失败:', error);
