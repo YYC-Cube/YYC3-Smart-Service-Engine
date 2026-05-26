@@ -1,18 +1,24 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useVoiceRecognition } from "@/hooks/useVoiceRecognition"
-import { useTextToSpeech } from "@/hooks/useTextToSpeech"
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 interface EnhancedVoiceInterfaceProps {
-  onVoiceInput: (text: string, confidence: number) => void
-  onVoiceOutput: (text: string) => void
-  autoSpeak?: boolean
+  onVoiceInput: (text: string, confidence: number) => void;
+  onVoiceOutput: (text: string) => void;
+  autoSpeak?: boolean;
 }
 
 export function EnhancedVoiceInterface({
@@ -20,25 +26,25 @@ export function EnhancedVoiceInterface({
   onVoiceOutput,
   autoSpeak = false,
 }: EnhancedVoiceInterfaceProps) {
-  const [isListening, setIsListening] = useState(false)
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const [transcript, setTranscript] = useState("")
-  const [confidence, setConfidence] = useState(0)
-  const [voiceHistory, setVoiceHistory] = useState<Array<{ text: string; type: "input" | "output"; timestamp: Date }>>(
-    [],
-  )
-  const [volume, setVolume] = useState(0)
-  const [isSupported, setIsSupported] = useState(true)
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [confidence, setConfidence] = useState(0);
+  const [voiceHistory, setVoiceHistory] = useState<
+    Array<{ text: string; type: 'input' | 'output'; timestamp: Date }>
+  >([]);
+  const [volume, setVolume] = useState(0);
+  const [isSupported, setIsSupported] = useState(true);
 
-  const [voiceRate, setVoiceRate] = useState(1)
-  const [voicePitch, setVoicePitch] = useState(1)
-  const [voiceVolume, setVoiceVolume] = useState(1)
-  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0)
+  const [voiceRate, setVoiceRate] = useState(1);
+  const [voicePitch, setVoicePitch] = useState(1);
+  const [voiceVolume, setVoiceVolume] = useState(1);
+  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
 
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
-  const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null)
-  const animationFrameRef = useRef<number>()
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number>();
 
   const {
     isListening: voiceIsListening,
@@ -48,7 +54,7 @@ export function EnhancedVoiceInterface({
     stopListening,
     isSupported: voiceSupported,
     error: voiceError,
-  } = useVoiceRecognition()
+  } = useVoiceRecognition();
 
   const {
     speak,
@@ -59,7 +65,7 @@ export function EnhancedVoiceInterface({
     setRate,
     setPitch,
     setVolume: setTTSVolume,
-  } = useTextToSpeech()
+  } = useTextToSpeech();
 
   const setupAudioVisualization = useCallback(async () => {
     try {
@@ -69,90 +75,90 @@ export function EnhancedVoiceInterface({
           noiseSuppression: true,
           autoGainControl: true,
         },
-      })
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
-      analyserRef.current = audioContextRef.current.createAnalyser()
-      microphoneRef.current = audioContextRef.current.createMediaStreamSource(stream)
+      });
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      microphoneRef.current = audioContextRef.current.createMediaStreamSource(stream);
 
-      microphoneRef.current.connect(analyserRef.current)
-      analyserRef.current.fftSize = 512
-      analyserRef.current.smoothingTimeConstant = 0.8
+      microphoneRef.current.connect(analyserRef.current);
+      analyserRef.current.fftSize = 512;
+      analyserRef.current.smoothingTimeConstant = 0.8;
 
       const updateVolume = () => {
         if (analyserRef.current) {
-          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
-          analyserRef.current.getByteFrequencyData(dataArray)
-          const average = dataArray.reduce((a, b) => a + b) / dataArray.length
-          setVolume(average / 255)
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setVolume(average / 255);
         }
-        animationFrameRef.current = requestAnimationFrame(updateVolume)
-      }
+        animationFrameRef.current = requestAnimationFrame(updateVolume);
+      };
 
-      updateVolume()
+      updateVolume();
     } catch (error) {
-      console.error("音频可视化设置失败:", error)
+      console.error('音频可视化设置失败:', error);
     }
-  }, [])
+  }, []);
 
   // 清理音频资源
   const cleanupAudio = useCallback(() => {
     if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
+      cancelAnimationFrame(animationFrameRef.current);
     }
     if (microphoneRef.current) {
-      microphoneRef.current.disconnect()
+      microphoneRef.current.disconnect();
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close()
+      audioContextRef.current.close();
     }
-  }, [])
+  }, []);
 
   // 开始语音识别
   const handleStartListening = useCallback(async () => {
-    setIsListening(true)
-    await setupAudioVisualization()
-    startListening()
-  }, [setupAudioVisualization, startListening])
+    setIsListening(true);
+    await setupAudioVisualization();
+    startListening();
+  }, [setupAudioVisualization, startListening]);
 
   // 停止语音识别
   const handleStopListening = useCallback(() => {
-    setIsListening(false)
-    cleanupAudio()
-    stopListening()
-  }, [cleanupAudio, stopListening])
+    setIsListening(false);
+    cleanupAudio();
+    stopListening();
+  }, [cleanupAudio, stopListening]);
 
   // 处理语音输入
   useEffect(() => {
     if (voiceTranscript && voiceTranscript !== transcript) {
-      setTranscript(voiceTranscript)
-      setConfidence(voiceConfidence)
+      setTranscript(voiceTranscript);
+      setConfidence(voiceConfidence);
 
       if (voiceTranscript.trim()) {
         const historyItem = {
           text: voiceTranscript,
-          type: "input" as const,
+          type: 'input' as const,
           timestamp: new Date(),
-        }
-        setVoiceHistory((prev) => [...prev, historyItem])
-        onVoiceInput(voiceTranscript, voiceConfidence)
+        };
+        setVoiceHistory((prev) => [...prev, historyItem]);
+        onVoiceInput(voiceTranscript, voiceConfidence);
       }
     }
-  }, [voiceTranscript, transcript, voiceConfidence, onVoiceInput])
+  }, [voiceTranscript, transcript, voiceConfidence, onVoiceInput]);
 
   // 同步语音识别状态
   useEffect(() => {
-    setIsListening(voiceIsListening)
-  }, [voiceIsListening])
+    setIsListening(voiceIsListening);
+  }, [voiceIsListening]);
 
   // 同步TTS状态
   useEffect(() => {
-    setIsSpeaking(ttsIsSpeaking)
-  }, [ttsIsSpeaking])
+    setIsSpeaking(ttsIsSpeaking);
+  }, [ttsIsSpeaking]);
 
   // 检查浏览器支持
   useEffect(() => {
-    setIsSupported(voiceSupported && "speechSynthesis" in window)
-  }, [voiceSupported])
+    setIsSupported(voiceSupported && 'speechSynthesis' in window);
+  }, [voiceSupported]);
 
   // 语音输出
   const handleSpeak = useCallback(
@@ -160,36 +166,36 @@ export function EnhancedVoiceInterface({
       if (text.trim()) {
         const historyItem = {
           text,
-          type: "output" as const,
+          type: 'output' as const,
           timestamp: new Date(),
-        }
-        setVoiceHistory((prev) => [...prev, historyItem])
-        speak(text)
-        onVoiceOutput(text)
+        };
+        setVoiceHistory((prev) => [...prev, historyItem]);
+        speak(text);
+        onVoiceOutput(text);
       }
     },
-    [speak, onVoiceOutput],
-  )
+    [speak, onVoiceOutput]
+  );
 
   useEffect(() => {
-    setRate(voiceRate)
-    setPitch(voicePitch)
-    setTTSVolume(voiceVolume)
-  }, [voiceRate, voicePitch, voiceVolume, setRate, setPitch, setTTSVolume])
+    setRate(voiceRate);
+    setPitch(voicePitch);
+    setTTSVolume(voiceVolume);
+  }, [voiceRate, voicePitch, voiceVolume, setRate, setPitch, setTTSVolume]);
 
   useEffect(() => {
     if (voices.length > 0 && selectedVoiceIndex < voices.length) {
-      setVoice(voices[selectedVoiceIndex])
+      setVoice(voices[selectedVoiceIndex]);
     }
-  }, [selectedVoiceIndex, voices, setVoice])
+  }, [selectedVoiceIndex, voices, setVoice]);
 
   // 清理资源
   useEffect(() => {
     return () => {
-      cleanupAudio()
-      stopSpeaking()
-    }
-  }, [cleanupAudio, stopSpeaking])
+      cleanupAudio();
+      stopSpeaking();
+    };
+  }, [cleanupAudio, stopSpeaking]);
 
   if (!isSupported) {
     return (
@@ -212,7 +218,7 @@ export function EnhancedVoiceInterface({
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -226,12 +232,14 @@ export function EnhancedVoiceInterface({
             </span>
             <div className="flex items-center space-x-2">
               <Badge
-                className={`transition-all duration-300 ${isListening ? "bg-red-500/20 text-red-300 border-red-500/50 animate-pulse" : "bg-slate-500/20 text-slate-300 border-slate-500/50"}`}
+                className={`transition-all duration-300 ${isListening ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse' : 'bg-slate-500/20 text-slate-300 border-slate-500/50'}`}
               >
-                {isListening ? "🔴 录音中" : "⚫ 待机"}
+                {isListening ? '🔴 录音中' : '⚫ 待机'}
               </Badge>
               {isSpeaking && (
-                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/50 animate-pulse">🔊 播放中</Badge>
+                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/50 animate-pulse">
+                  🔊 播放中
+                </Badge>
               )}
             </div>
           </CardTitle>
@@ -242,20 +250,23 @@ export function EnhancedVoiceInterface({
               <div className="absolute inset-0 flex items-end justify-center space-x-1 p-4">
                 {Array.from({ length: 64 }).map((_, i) => {
                   const height = isListening
-                    ? Math.max(8, volume * 100 + Math.random() * 30 + Math.sin(Date.now() / 100 + i) * 10)
-                    : 8
+                    ? Math.max(
+                        8,
+                        volume * 100 + Math.random() * 30 + Math.sin(Date.now() / 100 + i) * 10
+                      )
+                    : 8;
                   return (
                     <div
                       key={i}
                       className="bg-gradient-to-t from-cyan-500 via-blue-500 to-purple-500 rounded-sm transition-all duration-100 shadow-lg"
                       style={{
-                        width: "4px",
+                        width: '4px',
                         height: `${height}%`,
                         opacity: isListening ? 0.9 : 0.3,
-                        boxShadow: isListening ? `0 0 10px rgba(6, 182, 212, ${volume})` : "none",
+                        boxShadow: isListening ? `0 0 10px rgba(6, 182, 212, ${volume})` : 'none',
                       }}
                     />
-                  )
+                  );
                 })}
               </div>
               {isListening && (
@@ -283,8 +294,8 @@ export function EnhancedVoiceInterface({
               onClick={isListening ? handleStopListening : handleStartListening}
               className={`px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 ${
                 isListening
-                  ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/50"
-                  : "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/50"
+                  ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/50'
+                  : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/50'
               }`}
             >
               {isListening ? (
@@ -389,7 +400,11 @@ export function EnhancedVoiceInterface({
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
                     {voices.map((voice, index) => (
-                      <SelectItem key={index} value={index.toString()} className="text-slate-200 hover:bg-slate-700">
+                      <SelectItem
+                        key={index}
+                        value={index.toString()}
+                        className="text-slate-200 hover:bg-slate-700"
+                      >
                         {voice.name} ({voice.lang})
                       </SelectItem>
                     ))}
@@ -407,7 +422,7 @@ export function EnhancedVoiceInterface({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSpeak("您好，我是YYC³ AI助手，很高兴为您服务！")}
+              onClick={() => handleSpeak('您好，我是YYC³ AI助手，很高兴为您服务！')}
               className="border-slate-600/50 bg-slate-700/30 text-slate-300 hover:bg-slate-600/50 transition-all duration-200"
             >
               🤖 问候语
@@ -415,7 +430,7 @@ export function EnhancedVoiceInterface({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSpeak("语音功能测试成功，系统运行正常。")}
+              onClick={() => handleSpeak('语音功能测试成功，系统运行正常。')}
               className="border-slate-600/50 bg-slate-700/30 text-slate-300 hover:bg-slate-600/50 transition-all duration-200"
             >
               ✅ 测试语音
@@ -423,7 +438,7 @@ export function EnhancedVoiceInterface({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSpeak("正在启动文生图引擎，请稍候...")}
+              onClick={() => handleSpeak('正在启动文生图引擎，请稍候...')}
               className="border-slate-600/50 bg-slate-700/30 text-slate-300 hover:bg-slate-600/50 transition-all duration-200"
             >
               🎨 功能提示
@@ -431,7 +446,7 @@ export function EnhancedVoiceInterface({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSpeak("感谢使用YYC³ AI Center，祝您使用愉快！")}
+              onClick={() => handleSpeak('感谢使用YYC³ AI Center，祝您使用愉快！')}
               className="border-slate-600/50 bg-slate-700/30 text-slate-300 hover:bg-slate-600/50 transition-all duration-200"
             >
               👋 结束语
@@ -447,7 +462,9 @@ export function EnhancedVoiceInterface({
               <span className="flex items-center space-x-2">
                 <span>📜</span>
                 <span>语音交互历史</span>
-                <Badge className="bg-slate-600/50 text-slate-300 text-xs">{voiceHistory.length} 条记录</Badge>
+                <Badge className="bg-slate-600/50 text-slate-300 text-xs">
+                  {voiceHistory.length} 条记录
+                </Badge>
               </span>
               <Button
                 variant="outline"
@@ -463,30 +480,30 @@ export function EnhancedVoiceInterface({
             <div
               className="space-y-3 max-h-80 overflow-y-auto scroll-smooth pr-2"
               style={{
-                scrollbarWidth: "thin",
-                scrollbarColor: "rgba(59, 130, 246, 0.5) rgba(0, 0, 0, 0.2)",
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(59, 130, 246, 0.5) rgba(0, 0, 0, 0.2)',
               }}
             >
               {voiceHistory.map((item, index) => (
                 <div
                   key={index}
                   className={`p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] ${
-                    item.type === "input"
-                      ? "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30"
-                      : "bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30"
+                    item.type === 'input'
+                      ? 'bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30'
+                      : 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30'
                   }`}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className="text-2xl">{item.type === "input" ? "🎤" : "🔊"}</div>
+                    <div className="text-2xl">{item.type === 'input' ? '🎤' : '🔊'}</div>
                     <div className="flex-1">
                       <p className="text-slate-200 text-sm leading-relaxed">{item.text}</p>
                       <p className="text-slate-400 text-xs mt-2 flex items-center space-x-2">
-                        <span>{item.type === "input" ? "语音输入" : "语音输出"}</span>
+                        <span>{item.type === 'input' ? '语音输入' : '语音输出'}</span>
                         <span>•</span>
                         <span>{item.timestamp.toLocaleTimeString()}</span>
                       </p>
                     </div>
-                    {item.type === "output" && (
+                    {item.type === 'output' && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -540,5 +557,5 @@ export function EnhancedVoiceInterface({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

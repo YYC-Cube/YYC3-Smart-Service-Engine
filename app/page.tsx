@@ -1,78 +1,78 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useEffect, useState, useRef, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { EnhancedVoiceInterface } from "@/components/enhanced-voice-interface"
-import { EnhancedImageGenerator } from "@/components/enhanced-image-generator"
-import { useAIContext } from "@/hooks/useAIContext"
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { EnhancedVoiceInterface } from '@/components/enhanced-voice-interface';
+import { EnhancedImageGenerator } from '@/components/enhanced-image-generator';
+import { useAIContext } from '@/hooks/useAIContext';
 
-type AppState = "splash" | "main"
+type AppState = 'splash' | 'main';
 
 interface ChatMessage {
-  id: string
-  type: "user" | "ai" | "system"
-  content: string
-  timestamp: Date
-  functionCall?: string
-  metadata?: any
-  imageUrl?: string
-  audioUrl?: string
-  progress?: number
+  id: string;
+  type: 'user' | 'ai' | 'system';
+  content: string;
+  timestamp: Date;
+  functionCall?: string;
+  metadata?: any;
+  imageUrl?: string;
+  audioUrl?: string;
+  progress?: number;
 }
 
 interface SmartSuggestion {
-  title: string
-  description: string
-  icon: string
-  action: string
-  category: string
+  title: string;
+  description: string;
+  icon: string;
+  action: string;
+  category: string;
 }
 
 interface FunctionModule {
-  id: string
-  name: string
-  description: string
-  layer: "core" | "business" | "application" | "interaction"
-  category: "creative" | "analytics" | "management" | "communication" | "system" | "automation"
-  keywords: string[]
-  activated: boolean
-  status: "ready" | "processing" | "completed" | "error"
+  id: string;
+  name: string;
+  description: string;
+  layer: 'core' | 'business' | 'application' | 'interaction';
+  category: 'creative' | 'analytics' | 'management' | 'communication' | 'system' | 'automation';
+  keywords: string[];
+  activated: boolean;
+  status: 'ready' | 'processing' | 'completed' | 'error';
 }
 
 interface SystemMetrics {
-  cpuUsage: number
-  memoryUsage: number
-  networkLatency: number
-  activeConnections: number
-  cloudStatus: "connected" | "disconnected" | "syncing"
-  uptime: number
+  cpuUsage: number;
+  memoryUsage: number;
+  networkLatency: number;
+  activeConnections: number;
+  cloudStatus: 'connected' | 'disconnected' | 'syncing';
+  uptime: number;
 }
 
 // 水纹动画组件
 const WaterRipple = ({ onClick }: { onClick: () => void }) => {
-  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([])
-  const [isHovered, setIsHovered] = useState(false)
+  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    const newRipple = { id: Date.now(), x, y }
-    setRipples((prev) => [...prev, newRipple])
-
-    setTimeout(() => {
-      setRipples((prev) => prev.filter((ripple) => ripple.id !== newRipple.id))
-    }, 1000)
+    const newRipple = { id: Date.now(), x, y };
+    setRipples((prev) => [...prev, newRipple]);
 
     setTimeout(() => {
-      onClick()
-    }, 500)
-  }
+      setRipples((prev) => prev.filter((ripple) => ripple.id !== newRipple.id));
+    }, 1000);
+
+    setTimeout(() => {
+      onClick();
+    }, 500);
+  };
 
   return (
     <div
@@ -86,7 +86,7 @@ const WaterRipple = ({ onClick }: { onClick: () => void }) => {
           radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
           radial-gradient(circle at 50% 50%, rgba(147, 51, 234, 0.2) 0%, transparent 70%)
         `,
-        border: "2px solid rgba(6, 182, 212, 0.5)",
+        border: '2px solid rgba(6, 182, 212, 0.5)',
         boxShadow: `
           0 0 50px rgba(6, 182, 212, 0.3),
           inset 0 0 50px rgba(59, 130, 246, 0.2)
@@ -97,11 +97,11 @@ const WaterRipple = ({ onClick }: { onClick: () => void }) => {
       <div className="absolute inset-4 rounded-full border border-cyan-400/30 animate-pulse" />
       <div
         className="absolute inset-8 rounded-full border border-blue-400/20 animate-pulse"
-        style={{ animationDelay: "0.5s" }}
+        style={{ animationDelay: '0.5s' }}
       />
       <div
         className="absolute inset-12 rounded-full border border-purple-400/20 animate-pulse"
-        style={{ animationDelay: "1s" }}
+        style={{ animationDelay: '1s' }}
       />
 
       {/* 中心LOGO区域 */}
@@ -115,7 +115,10 @@ const WaterRipple = ({ onClick }: { onClick: () => void }) => {
       </div>
 
       {/* 旋转光环 */}
-      <div className="absolute inset-0 rounded-full animate-spin" style={{ animationDuration: "20s" }}>
+      <div
+        className="absolute inset-0 rounded-full animate-spin"
+        style={{ animationDuration: '20s' }}
+      >
         <div className="absolute top-0 left-1/2 w-2 h-2 bg-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1" />
         <div className="absolute bottom-0 left-1/2 w-2 h-2 bg-blue-400 rounded-full transform -translate-x-1/2 translate-y-1" />
         <div className="absolute left-0 top-1/2 w-2 h-2 bg-purple-400 rounded-full transform -translate-y-1/2 -translate-x-1" />
@@ -130,17 +133,17 @@ const WaterRipple = ({ onClick }: { onClick: () => void }) => {
           style={{
             left: ripple.x,
             top: ripple.y,
-            transform: "translate(-50%, -50%)",
+            transform: 'translate(-50%, -50%)',
           }}
         >
           <div className="w-4 h-4 border-2 border-cyan-400 rounded-full animate-ping opacity-75" />
           <div
             className="absolute inset-0 w-4 h-4 border border-blue-400 rounded-full animate-ping opacity-50"
-            style={{ animationDelay: "0.2s" }}
+            style={{ animationDelay: '0.2s' }}
           />
           <div
             className="absolute inset-0 w-4 h-4 border border-purple-400 rounded-full animate-ping opacity-25"
-            style={{ animationDelay: "0.4s" }}
+            style={{ animationDelay: '0.4s' }}
           />
         </div>
       ))}
@@ -150,34 +153,34 @@ const WaterRipple = ({ onClick }: { onClick: () => void }) => {
         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 animate-pulse" />
       )}
     </div>
-  )
-}
+  );
+};
 
 // 粒子背景组件
 const ParticleBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     const particles: Array<{
-      x: number
-      y: number
-      size: number
-      speedX: number
-      speedY: number
-      color: string
-      opacity: number
-    }> = []
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      color: string;
+      opacity: number;
+    }> = [];
 
-    const particleCount = 200
+    const particleCount = 200;
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
@@ -188,84 +191,84 @@ const ParticleBackground = () => {
         speedY: (Math.random() - 0.5) * 1,
         color: `hsl(${180 + Math.random() * 60}, 70%, 60%)`,
         opacity: Math.random() * 0.8 + 0.2,
-      })
+      });
     }
 
     function animate() {
-      if (!ctx || !canvas) return
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach((particle, index) => {
-        particle.x += particle.speedX
-        particle.y += particle.speedY
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
 
-        if (particle.x > canvas.width) particle.x = 0
-        if (particle.x < 0) particle.x = canvas.width
-        if (particle.y > canvas.height) particle.y = 0
-        if (particle.y < 0) particle.y = canvas.height
+        if (particle.x > canvas.width) particle.x = 0;
+        if (particle.x < 0) particle.x = canvas.width;
+        if (particle.y > canvas.height) particle.y = 0;
+        if (particle.y < 0) particle.y = canvas.height;
 
         // 绘制粒子
-        ctx.save()
-        ctx.globalAlpha = particle.opacity
-        ctx.fillStyle = particle.color
-        ctx.beginPath()
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.restore()
+        ctx.save();
+        ctx.globalAlpha = particle.opacity;
+        ctx.fillStyle = particle.color;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
 
         // 连接附近的粒子
         particles.slice(index + 1).forEach((otherParticle) => {
-          const dx = particle.x - otherParticle.x
-          const dy = particle.y - otherParticle.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
+          const dx = particle.x - otherParticle.x;
+          const dy = particle.y - otherParticle.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < 100) {
-            ctx.save()
-            ctx.globalAlpha = ((100 - distance) / 100) * 0.2
-            ctx.strokeStyle = particle.color
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.moveTo(particle.x, particle.y)
-            ctx.lineTo(otherParticle.x, otherParticle.y)
-            ctx.stroke()
-            ctx.restore()
+            ctx.save();
+            ctx.globalAlpha = ((100 - distance) / 100) * 0.2;
+            ctx.strokeStyle = particle.color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(particle.x, particle.y);
+            ctx.lineTo(otherParticle.x, otherParticle.y);
+            ctx.stroke();
+            ctx.restore();
           }
-        })
-      })
+        });
+      });
 
-      requestAnimationFrame(animate)
+      requestAnimationFrame(animate);
     }
 
-    animate()
+    animate();
 
     const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
 
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0" />
-}
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0" />;
+};
 
 export default function Dashboard() {
-  const [appState, setAppState] = useState<AppState>("splash")
-  const [userInput, setUserInput] = useState("")
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [smartSuggestions, setSmartSuggestions] = useState<SmartSuggestion[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
-  const [showVoiceInterface, setShowVoiceInterface] = useState(false)
-  const [showImageGenerator, setShowImageGenerator] = useState(false)
+  const [appState, setAppState] = useState<AppState>('splash');
+  const [userInput, setUserInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<SmartSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showVoiceInterface, setShowVoiceInterface] = useState(false);
+  const [showImageGenerator, setShowImageGenerator] = useState(false);
 
   // 文件上传
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // 图像生成进度
-  const [imageGenerationProgress, setImageGenerationProgress] = useState(0)
+  const [imageGenerationProgress, setImageGenerationProgress] = useState(0);
 
   // 系统监控
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
@@ -273,9 +276,9 @@ export default function Dashboard() {
     memoryUsage: 42,
     networkLatency: 8,
     activeConnections: 128,
-    cloudStatus: "connected",
+    cloudStatus: 'connected',
     uptime: 0,
-  })
+  });
 
   // AI上下文管理
   const {
@@ -286,148 +289,158 @@ export default function Dashboard() {
     generateContextualResponse,
     getRelevantHistory,
     clearContext,
-  } = useAIContext()
+  } = useAIContext();
 
   // 功能模块系统
   const [functionModules, setFunctionModules] = useState<FunctionModule[]>([
     {
-      id: "text-to-image",
-      name: "文生图引擎",
-      description: "AI文本生成图像创作平台",
-      layer: "application",
-      category: "creative",
-      keywords: ["文生图", "图像生成", "AI绘画", "创意图片", "文本转图像", "AI艺术", "画", "生成图片", "创建图像"],
+      id: 'text-to-image',
+      name: '文生图引擎',
+      description: 'AI文本生成图像创作平台',
+      layer: 'application',
+      category: 'creative',
+      keywords: [
+        '文生图',
+        '图像生成',
+        'AI绘画',
+        '创意图片',
+        '文本转图像',
+        'AI艺术',
+        '画',
+        '生成图片',
+        '创建图像',
+      ],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "digital-human",
-      name: "数字人小左",
-      description: "左右沙发智能电销数字人",
-      layer: "application",
-      category: "communication",
-      keywords: ["左右沙发", "数字人", "小左", "电销", "沙发销售", "家具"],
+      id: 'digital-human',
+      name: '数字人小左',
+      description: '左右沙发智能电销数字人',
+      layer: 'application',
+      category: 'communication',
+      keywords: ['左右沙发', '数字人', '小左', '电销', '沙发销售', '家具'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "smart-customer-service",
-      name: "智能客服",
-      description: "全场景AI对话系统",
-      layer: "application",
-      category: "communication",
-      keywords: ["客服", "咨询", "服务", "对话", "话术", "沟通"],
+      id: 'smart-customer-service',
+      name: '智能客服',
+      description: '全场景AI对话系统',
+      layer: 'application',
+      category: 'communication',
+      keywords: ['客服', '咨询', '服务', '对话', '话术', '沟通'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "creative-workshop",
-      name: "言启万象",
-      description: "AI创意内容生成平台",
-      layer: "application",
-      category: "creative",
-      keywords: ["创意", "设计", "文案", "图片", "视频", "创作"],
+      id: 'creative-workshop',
+      name: '言启万象',
+      description: 'AI创意内容生成平台',
+      layer: 'application',
+      category: 'creative',
+      keywords: ['创意', '设计', '文案', '图片', '视频', '创作'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "data-cube",
-      name: "数据魔方",
-      description: "智能数据分析系统",
-      layer: "business",
-      category: "analytics",
-      keywords: ["数据", "分析", "报表", "统计", "可视化"],
+      id: 'data-cube',
+      name: '数据魔方',
+      description: '智能数据分析系统',
+      layer: 'business',
+      category: 'analytics',
+      keywords: ['数据', '分析', '报表', '统计', '可视化'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "customer-management",
-      name: "客资系统",
-      description: "客户资源管理平台",
-      layer: "business",
-      category: "management",
-      keywords: ["客户", "CRM", "管理", "客资"],
+      id: 'customer-management',
+      name: '客资系统',
+      description: '客户资源管理平台',
+      layer: 'business',
+      category: 'management',
+      keywords: ['客户', 'CRM', '管理', '客资'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "customer-operations",
-      name: "智能客户运维",
-      description: "家居整装行业客户全生命周期管理系统",
-      layer: "business",
-      category: "management",
-      keywords: ["客户运维", "生命周期", "家居整装", "运营管理", "智能运维"],
+      id: 'customer-operations',
+      name: '智能客户运维',
+      description: '家居整装行业客户全生命周期管理系统',
+      layer: 'business',
+      category: 'management',
+      keywords: ['客户运维', '生命周期', '家居整装', '运营管理', '智能运维'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "smart-forms",
-      name: "智能表单系统",
-      description: "AI驱动的智能表单创建、分析与管理平台",
-      layer: "application",
-      category: "automation",
-      keywords: ["智能表单", "表单系统", "AI表单", "数据收集", "表单分析"],
+      id: 'smart-forms',
+      name: '智能表单系统',
+      description: 'AI驱动的智能表单创建、分析与管理平台',
+      layer: 'application',
+      category: 'automation',
+      keywords: ['智能表单', '表单系统', 'AI表单', '数据收集', '表单分析'],
       activated: false,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "yanyu-cloud",
-      name: "言语云平台",
-      description: "YYC³ AI Center云端智能服务平台",
-      layer: "core",
-      category: "system",
-      keywords: ["言语云", "云平台", "YYC", "云服务", "AI中心"],
+      id: 'yanyu-cloud',
+      name: '言语云平台',
+      description: 'YYC³ AI Center云端智能服务平台',
+      layer: 'core',
+      category: 'system',
+      keywords: ['言语云', '云平台', 'YYC', '云服务', 'AI中心'],
       activated: true,
-      status: "ready",
+      status: 'ready',
     },
     {
-      id: "system-monitor",
-      name: "系统监控",
-      description: "实时系统状态监控",
-      layer: "core",
-      category: "system",
-      keywords: ["系统", "监控", "状态", "性能"],
+      id: 'system-monitor',
+      name: '系统监控',
+      description: '实时系统状态监控',
+      layer: 'core',
+      category: 'system',
+      keywords: ['系统', '监控', '状态', '性能'],
       activated: true,
-      status: "ready",
+      status: 'ready',
     },
-  ])
+  ]);
 
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [scrollPosition, setScrollPosition] = useState(0)
-  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       if (chatContainerRef.current) {
-        const scrollTop = chatContainerRef.current.scrollTop
-        setScrollPosition(scrollTop)
+        const scrollTop = chatContainerRef.current.scrollTop;
+        setScrollPosition(scrollTop);
       }
-    }
+    };
 
-    const container = chatContainerRef.current
+    const container = chatContainerRef.current;
     if (container) {
-      container.addEventListener("scroll", handleScroll)
-      return () => container.removeEventListener("scroll", handleScroll)
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, [])
+  }, []);
 
   const calculateOpacity = useCallback(
     (baseOpacity: number, scrollFactor = 0.0001) => {
-      const opacity = Math.max(baseOpacity - scrollPosition * scrollFactor, baseOpacity * 0.7)
-      return opacity
+      const opacity = Math.max(baseOpacity - scrollPosition * scrollFactor, baseOpacity * 0.7);
+      return opacity;
     },
-    [scrollPosition],
-  )
+    [scrollPosition]
+  );
 
   // 系统初始化函数
   const initializeSystem = useCallback(() => {
     setTimeout(() => {
       const welcomeMessage: ChatMessage = {
         id: `msg_${Date.now()}`,
-        type: "ai",
+        type: 'ai',
         content: `🌟 **YYC³ AI Center** 万象归元于云枢
 
 **深栈智启新纪元** - 未来智能操作系统已成功启动！
@@ -546,16 +559,16 @@ export default function Dashboard() {
 
 所有功能都已真实实现，开启您的智能之旅！直接告诉我您想要什么，我会智能匹配最合适的功能为您服务！`,
         timestamp: new Date(),
-      }
+      };
 
-      setChatMessages([welcomeMessage])
+      setChatMessages([welcomeMessage]);
       addMessage({
-        type: "ai",
+        type: 'ai',
         content: welcomeMessage.content,
-        metadata: { intent: "welcome", confidence: 1.0 },
-      })
-    }, 800)
-  }, [addMessage])
+        metadata: { intent: 'welcome', confidence: 1.0 },
+      });
+    }, 800);
+  }, [addMessage]);
 
   // 系统监控更新
   useEffect(() => {
@@ -565,242 +578,281 @@ export default function Dashboard() {
         cpuUsage: Math.max(5, Math.min(95, prev.cpuUsage + (Math.random() - 0.5) * 10)),
         memoryUsage: Math.max(20, Math.min(80, prev.memoryUsage + (Math.random() - 0.5) * 8)),
         networkLatency: Math.max(1, Math.min(50, prev.networkLatency + (Math.random() - 0.5) * 5)),
-        activeConnections: Math.max(50, Math.min(500, prev.activeConnections + Math.floor((Math.random() - 0.5) * 20))),
+        activeConnections: Math.max(
+          50,
+          Math.min(500, prev.activeConnections + Math.floor((Math.random() - 0.5) * 20))
+        ),
         uptime: prev.uptime + 1,
-      }))
-    }, 2000)
+      }));
+    }, 2000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   // 智能建议生成
   const generateSmartSuggestions = useCallback(
     (input: string) => {
-      const suggestions: SmartSuggestion[] = []
-      const lowerInput = input.toLowerCase()
+      const suggestions: SmartSuggestion[] = [];
+      const lowerInput = input.toLowerCase();
 
       // 创意类建议
       if (
-        lowerInput.includes("图") ||
-        lowerInput.includes("画") ||
-        lowerInput.includes("生成") ||
-        lowerInput.includes("创作")
+        lowerInput.includes('图') ||
+        lowerInput.includes('画') ||
+        lowerInput.includes('生成') ||
+        lowerInput.includes('创作')
       ) {
         suggestions.push({
-          title: "🎨 启动文生图引擎",
-          description: "AI图像创作平台",
-          icon: "🎨",
-          action: "生成一张现代简约风格的客厅图片",
-          category: "creative",
-        })
+          title: '🎨 启动文生图引擎',
+          description: 'AI图像创作平台',
+          icon: '🎨',
+          action: '生成一张现代简约风格的客厅图片',
+          category: 'creative',
+        });
       }
 
       // 沟通类建议
-      if (lowerInput.includes("客服") || lowerInput.includes("咨询") || lowerInput.includes("对话")) {
+      if (
+        lowerInput.includes('客服') ||
+        lowerInput.includes('咨询') ||
+        lowerInput.includes('对话')
+      ) {
         suggestions.push({
-          title: "🤖 智能客服系统",
-          description: "全场景AI对话",
-          icon: "🤖",
-          action: "启动智能客服系统",
-          category: "communication",
-        })
+          title: '🤖 智能客服系统',
+          description: '全场景AI对话',
+          icon: '🤖',
+          action: '启动智能客服系统',
+          category: 'communication',
+        });
       }
 
       // 分析类建议
-      if (lowerInput.includes("数据") || lowerInput.includes("分析") || lowerInput.includes("报表")) {
+      if (
+        lowerInput.includes('数据') ||
+        lowerInput.includes('分析') ||
+        lowerInput.includes('报表')
+      ) {
         suggestions.push({
-          title: "📊 数据魔方分析",
-          description: "智能数据洞察",
-          icon: "📊",
-          action: "分析客户数据并生成报表",
-          category: "analytics",
-        })
+          title: '📊 数据魔方分析',
+          description: '智能数据洞察',
+          icon: '📊',
+          action: '分析客户数据并生成报表',
+          category: 'analytics',
+        });
       }
 
       // 语音类建议
-      if (lowerInput.includes("语音") || lowerInput.includes("说话") || lowerInput.includes("声音")) {
+      if (
+        lowerInput.includes('语音') ||
+        lowerInput.includes('说话') ||
+        lowerInput.includes('声音')
+      ) {
         suggestions.push({
-          title: "🎤 语音交互系统",
-          description: "自然语言对话",
-          icon: "🎤",
-          action: "开启语音交互功能",
-          category: "interaction",
-        })
+          title: '🎤 语音交互系统',
+          description: '自然语言对话',
+          icon: '🎤',
+          action: '开启语音交互功能',
+          category: 'interaction',
+        });
       }
 
       // 数字人建议
-      if (lowerInput.includes("小左") || lowerInput.includes("沙发") || lowerInput.includes("数字人")) {
+      if (
+        lowerInput.includes('小左') ||
+        lowerInput.includes('沙发') ||
+        lowerInput.includes('数字人')
+      ) {
         suggestions.push({
-          title: "👤 数字人小左",
-          description: "专业电销顾问",
-          icon: "👤",
-          action: "启动数字人小左",
-          category: "communication",
-        })
+          title: '👤 数字人小左',
+          description: '专业电销顾问',
+          icon: '👤',
+          action: '启动数字人小左',
+          category: 'communication',
+        });
       }
 
       // 表单类建议
-      if (lowerInput.includes("表单") || lowerInput.includes("收集") || lowerInput.includes("调查")) {
+      if (
+        lowerInput.includes('表单') ||
+        lowerInput.includes('收集') ||
+        lowerInput.includes('调查')
+      ) {
         suggestions.push({
-          title: "📝 智能表单系统",
-          description: "AI驱动数据收集",
-          icon: "📝",
-          action: "创建智能表单",
-          category: "automation",
-        })
+          title: '📝 智能表单系统',
+          description: 'AI驱动数据收集',
+          icon: '📝',
+          action: '创建智能表单',
+          category: 'automation',
+        });
       }
 
       // 客户管理建议
-      if (lowerInput.includes("客户") || lowerInput.includes("CRM") || lowerInput.includes("管理")) {
+      if (
+        lowerInput.includes('客户') ||
+        lowerInput.includes('CRM') ||
+        lowerInput.includes('管理')
+      ) {
         suggestions.push({
-          title: "👥 客户管理系统",
-          description: "客户关系管理",
-          icon: "👥",
-          action: "查看客户管理系统",
-          category: "management",
-        })
+          title: '👥 客户管理系统',
+          description: '客户关系管理',
+          icon: '👥',
+          action: '查看客户管理系统',
+          category: 'management',
+        });
       }
 
       // 系统类建议
-      if (lowerInput.includes("系统") || lowerInput.includes("监控") || lowerInput.includes("状态")) {
+      if (
+        lowerInput.includes('系统') ||
+        lowerInput.includes('监控') ||
+        lowerInput.includes('状态')
+      ) {
         suggestions.push({
-          title: "⚙️ 系统监控",
-          description: "实时状态监控",
-          icon: "⚙️",
-          action: "显示系统监控状态",
-          category: "system",
-        })
+          title: '⚙️ 系统监控',
+          description: '实时状态监控',
+          icon: '⚙️',
+          action: '显示系统监控状态',
+          category: 'system',
+        });
       }
 
       // 如果没有匹配的建议，提供通用建议
       if (suggestions.length === 0) {
         suggestions.push(
           {
-            title: "🎨 AI创意工坊",
-            description: "文生图、设计、创作",
-            icon: "🎨",
-            action: "生成一张专业的产品展示图片",
-            category: "creative",
+            title: '🎨 AI创意工坊',
+            description: '文生图、设计、创作',
+            icon: '🎨',
+            action: '生成一张专业的产品展示图片',
+            category: 'creative',
           },
           {
-            title: "🎤 语音助手",
-            description: "开启语音对话",
-            icon: "🎤",
-            action: "开启语音交互功能",
-            category: "interaction",
+            title: '🎤 语音助手',
+            description: '开启语音对话',
+            icon: '🎤',
+            action: '开启语音交互功能',
+            category: 'interaction',
           },
           {
-            title: "📊 智能分析",
-            description: "数据洞察服务",
-            icon: "📊",
-            action: "分析业务数据趋势",
-            category: "analytics",
+            title: '📊 智能分析',
+            description: '数据洞察服务',
+            icon: '📊',
+            action: '分析业务数据趋势',
+            category: 'analytics',
           },
           {
-            title: "🤖 智能客服",
-            description: "专业对话服务",
-            icon: "🤖",
-            action: "启动智能客服系统",
-            category: "communication",
-          },
-        )
+            title: '🤖 智能客服',
+            description: '专业对话服务',
+            icon: '🤖',
+            action: '启动智能客服系统',
+            category: 'communication',
+          }
+        );
       }
 
-      setSmartSuggestions(suggestions.slice(0, 6))
-      setShowSuggestions(true)
+      setSmartSuggestions(suggestions.slice(0, 6));
+      setShowSuggestions(true);
     },
-    [setSmartSuggestions, setShowSuggestions],
-  )
+    [setSmartSuggestions, setShowSuggestions]
+  );
 
   // 智能功能匹配
   const matchFunction = useCallback(
     (input: string): FunctionModule | null => {
-      const lowerInput = input.toLowerCase()
+      const lowerInput = input.toLowerCase();
 
       for (const module of functionModules) {
         if (module.keywords.some((keyword) => lowerInput.includes(keyword.toLowerCase()))) {
-          return module
+          return module;
         }
       }
 
-      return null
+      return null;
     },
-    [functionModules],
-  )
+    [functionModules]
+  );
 
   // 处理用户输入
   const handleUserInput = useCallback(
     async (input: string, confidence = 1.0) => {
-      if (!input.trim()) return
+      if (!input.trim()) return;
 
       const userMessage: ChatMessage = {
         id: `msg_${Date.now()}_user`,
-        type: "user",
+        type: 'user',
         content: input,
         timestamp: new Date(),
-      }
+      };
 
-      setChatMessages((prev) => [...prev, userMessage])
+      setChatMessages((prev) => [...prev, userMessage]);
       addMessage({
-        type: "user",
+        type: 'user',
         content: input,
         metadata: { confidence },
-      })
+      });
 
-      setIsTyping(true)
-      setShowSuggestions(false)
+      setIsTyping(true);
+      setShowSuggestions(false);
 
       try {
         // 意图分析
-        const intentResult = await analyzeIntent(input)
+        const intentResult = await analyzeIntent(input);
 
         // 功能匹配
-        const matchedFunction = matchFunction(input)
+        const matchedFunction = matchFunction(input);
 
         // 生成智能建议
-        generateSmartSuggestions(input)
+        generateSmartSuggestions(input);
 
         // 特殊功能处理
-        const lowerInput = input.toLowerCase()
+        const lowerInput = input.toLowerCase();
 
         // 检查是否需要显示特殊界面
         if (
-          (lowerInput.includes("图") || lowerInput.includes("画") || lowerInput.includes("生成")) &&
-          (lowerInput.includes("图片") || lowerInput.includes("图像") || lowerInput.includes("画作"))
+          (lowerInput.includes('图') || lowerInput.includes('画') || lowerInput.includes('生成')) &&
+          (lowerInput.includes('图片') ||
+            lowerInput.includes('图像') ||
+            lowerInput.includes('画作'))
         ) {
-          setShowImageGenerator(true)
+          setShowImageGenerator(true);
         }
 
         if (
-          lowerInput.includes("语音") &&
-          (lowerInput.includes("开启") || lowerInput.includes("启动") || lowerInput.includes("测试"))
+          lowerInput.includes('语音') &&
+          (lowerInput.includes('开启') ||
+            lowerInput.includes('启动') ||
+            lowerInput.includes('测试'))
         ) {
-          setShowVoiceInterface(true)
+          setShowVoiceInterface(true);
         }
 
         // 生成上下文回复
-        const response = await generateContextualResponse(input, intentResult.intent)
+        const response = await generateContextualResponse(input, intentResult.intent);
 
         // 功能激活处理
         if (matchedFunction) {
           setFunctionModules((prev) =>
             prev.map((module) =>
-              module.id === matchedFunction.id ? { ...module, activated: true, status: "processing" } : module,
-            ),
-          )
+              module.id === matchedFunction.id
+                ? { ...module, activated: true, status: 'processing' }
+                : module
+            )
+          );
 
           setTimeout(() => {
             setFunctionModules((prev) =>
-              prev.map((module) => (module.id === matchedFunction.id ? { ...module, status: "completed" } : module)),
-            )
-          }, 2000)
+              prev.map((module) =>
+                module.id === matchedFunction.id ? { ...module, status: 'completed' } : module
+              )
+            );
+          }, 2000);
         }
 
         // 添加AI回复
         setTimeout(() => {
           const aiMessage: ChatMessage = {
             id: `msg_${Date.now()}_ai`,
-            type: "ai",
+            type: 'ai',
             content: response,
             timestamp: new Date(),
             functionCall: matchedFunction?.name,
@@ -810,52 +862,52 @@ export default function Dashboard() {
               entities: intentResult.entities,
               sentiment: intentResult.sentiment,
             },
-          }
+          };
 
-          setChatMessages((prev) => [...prev, aiMessage])
+          setChatMessages((prev) => [...prev, aiMessage]);
           addMessage({
-            type: "ai",
+            type: 'ai',
             content: response,
             metadata: aiMessage.metadata,
-          })
+          });
 
-          setIsTyping(false)
-        }, 1500)
+          setIsTyping(false);
+        }, 1500);
       } catch (error) {
-        console.error("处理用户输入时出错:", error)
-        setIsTyping(false)
+        console.error('处理用户输入时出错:', error);
+        setIsTyping(false);
       }
     },
-    [addMessage, analyzeIntent, generateContextualResponse, generateSmartSuggestions, matchFunction],
-  )
+    [addMessage, analyzeIntent, generateContextualResponse, generateSmartSuggestions, matchFunction]
+  );
 
   // 处理发送消息
   const handleSendMessage = useCallback(() => {
     if (userInput.trim()) {
-      handleUserInput(userInput)
-      setUserInput("")
+      handleUserInput(userInput);
+      setUserInput('');
     }
-  }, [userInput, handleUserInput])
+  }, [userInput, handleUserInput]);
 
   // 处理语音输入
   const handleVoiceInput = useCallback(
     (text: string, confidence: number) => {
-      handleUserInput(text, confidence)
+      handleUserInput(text, confidence);
     },
-    [handleUserInput],
-  )
+    [handleUserInput]
+  );
 
   // 处理语音输出
   const handleVoiceOutput = useCallback((text: string) => {
-    console.log("语音输出:", text)
-  }, [])
+    console.log('语音输出:', text);
+  }, []);
 
   // 处理图像生成
   const handleImageGenerated = useCallback(
     (result: any) => {
       const imageMessage: ChatMessage = {
         id: `msg_${Date.now()}_image`,
-        type: "ai",
+        type: 'ai',
         content: `🎨 **图像生成完成**
 
 **创作详情：**
@@ -870,52 +922,52 @@ export default function Dashboard() {
 您的专属AI艺术作品已完成！可以下载保存或继续创作变体。`,
         timestamp: new Date(),
         imageUrl: result.url,
-        functionCall: "文生图引擎",
-      }
+        functionCall: '文生图引擎',
+      };
 
-      setChatMessages((prev) => [...prev, imageMessage])
+      setChatMessages((prev) => [...prev, imageMessage]);
       addMessage({
-        type: "ai",
+        type: 'ai',
         content: imageMessage.content,
-        metadata: { functionCall: "text-to-image", imageGenerated: true },
-      })
+        metadata: { functionCall: 'text-to-image', imageGenerated: true },
+      });
     },
-    [addMessage],
-  )
+    [addMessage]
+  );
 
   // 处理建议点击
   const handleSuggestionClick = useCallback(
     (suggestion: SmartSuggestion) => {
-      handleUserInput(suggestion.action)
-      setShowSuggestions(false)
+      handleUserInput(suggestion.action);
+      setShowSuggestions(false);
     },
-    [handleUserInput],
-  )
+    [handleUserInput]
+  );
 
   // 文件上传处理
   const handleFileUpload = useCallback((files: FileList) => {
-    const fileArray = Array.from(files)
-    setUploadedFiles((prev) => [...prev, ...fileArray])
+    const fileArray = Array.from(files);
+    setUploadedFiles((prev) => [...prev, ...fileArray]);
 
     // 模拟上传进度
-    let progress = 0
+    let progress = 0;
     const interval = setInterval(() => {
-      progress += 10
-      setUploadProgress(progress)
+      progress += 10;
+      setUploadProgress(progress);
       if (progress >= 100) {
-        clearInterval(interval)
-        setTimeout(() => setUploadProgress(0), 1000)
+        clearInterval(interval);
+        setTimeout(() => setUploadProgress(0), 1000);
       }
-    }, 200)
+    }, 200);
 
     // 添加文件上传消息
     const fileMessage: ChatMessage = {
       id: `msg_${Date.now()}_file`,
-      type: "system",
+      type: 'system',
       content: `📁 **文件上传完成**
 
 **上传文件列表：**
-${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size / 1024 / 1024).toFixed(2)} MB)`).join("\n")}
+${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size / 1024 / 1024).toFixed(2)} MB)`).join('\n')}
 
 **文件处理建议：**
 • 图片文件：可用于AI图像分析、风格提取
@@ -924,26 +976,26 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
 
 请告诉我您希望如何处理这些文件，我会为您提供相应的智能服务！`,
       timestamp: new Date(),
-    }
+    };
 
     setTimeout(() => {
-      setChatMessages((prev) => [...prev, fileMessage])
-    }, 2000)
-  }, [])
+      setChatMessages((prev) => [...prev, fileMessage]);
+    }, 2000);
+  }, []);
 
   // 滚动到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [chatMessages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   // 进入主界面
   const handleEnterMain = useCallback(() => {
-    setAppState("main")
-    initializeSystem()
-  }, [initializeSystem])
+    setAppState('main');
+    initializeSystem();
+  }, [initializeSystem]);
 
   // 首页启动画面
-  if (appState === "splash") {
+  if (appState === 'splash') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 flex items-center justify-center relative overflow-hidden">
         <ParticleBackground />
@@ -954,12 +1006,16 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
             <div className="text-7xl md:text-9xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent animate-pulse">
               YYC³
             </div>
-            <div className="text-3xl md:text-5xl text-white font-light tracking-wider">AI Center</div>
+            <div className="text-3xl md:text-5xl text-white font-light tracking-wider">
+              AI Center
+            </div>
           </div>
 
           {/* 核心理念 */}
           <div className="space-y-4">
-            <div className="text-2xl md:text-3xl text-cyan-300 font-bold animate-bounce">万象归元于云枢</div>
+            <div className="text-2xl md:text-3xl text-cyan-300 font-bold animate-bounce">
+              万象归元于云枢
+            </div>
             <div className="w-32 h-1 bg-gradient-to-r from-cyan-500 to-blue-500 mx-auto rounded-full"></div>
             <div className="text-xl md:text-2xl text-blue-200 font-semibold">深栈智启新纪元</div>
           </div>
@@ -1001,7 +1057,9 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
               <br />
               所有功能均通过AI聊天交互操作，一句话即可调用任何功能
             </div>
-            <div className="text-cyan-400 text-lg font-semibold animate-pulse">点击中心圆圈开始体验</div>
+            <div className="text-cyan-400 text-lg font-semibold animate-pulse">
+              点击中心圆圈开始体验
+            </div>
           </div>
         </div>
 
@@ -1009,22 +1067,22 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div
           className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
+          style={{ animationDelay: '1s' }}
         ></div>
         <div
           className="absolute top-1/2 left-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "2s" }}
+          style={{ animationDelay: '2s' }}
         ></div>
       </div>
-    )
+    );
   }
 
   // 主界面 - 完全无边界设计
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
       <ParticleBackground />
 
-      <div className="relative z-10 flex flex-col h-screen">
+      <div className="relative z-10 flex flex-col h-full">
         <div
           className="bg-black/20 backdrop-blur-md border-b border-white/10 p-3 transition-all duration-300"
           style={{
@@ -1055,7 +1113,9 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                   连接: <span className="text-purple-300">{systemMetrics.activeConnections}</span>
                 </span>
               </div>
-              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">☁️ 云端已连接</Badge>
+              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
+                ☁️ 云端已连接
+              </Badge>
             </div>
           </div>
         </div>
@@ -1066,46 +1126,48 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
             ref={chatContainerRef}
             className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth"
             style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(59, 130, 246, 0.5) rgba(0, 0, 0, 0.2)",
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(59, 130, 246, 0.5) rgba(0, 0, 0, 0.2)',
             }}
           >
             {chatMessages.map((message, index) => (
               <div
                 key={message.id}
-                className={`flex ${message.type === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-500`}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div
                   className={`max-w-4xl p-6 rounded-2xl backdrop-blur-md transition-all duration-300 ${
-                    message.type === "user"
-                      ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-50"
-                      : message.type === "ai"
-                        ? "bg-black/30 border border-white/20 text-slate-50"
-                        : "bg-slate-600/20 border border-slate-500/20 text-slate-200"
+                    message.type === 'user'
+                      ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-50'
+                      : message.type === 'ai'
+                        ? 'bg-black/30 border border-white/20 text-slate-50'
+                        : 'bg-slate-600/20 border border-slate-500/20 text-slate-200'
                   }`}
                   style={{
                     backgroundColor:
-                      message.type === "user"
+                      message.type === 'user'
                         ? `rgba(6, 182, 212, ${calculateOpacity(0.2, 0.00005)})`
-                        : message.type === "ai"
+                        : message.type === 'ai'
                           ? `rgba(0, 0, 0, ${calculateOpacity(0.3, 0.00005)})`
                           : `rgba(71, 85, 105, ${calculateOpacity(0.2, 0.00005)})`,
                   }}
                 >
                   <div className="flex items-start space-x-4">
                     <div className="text-3xl flex-shrink-0">
-                      {message.type === "user" ? "👤" : message.type === "ai" ? "🤖" : "⚙️"}
+                      {message.type === 'user' ? '👤' : message.type === 'ai' ? '🤖' : '⚙️'}
                     </div>
                     <div className="flex-1 space-y-3">
                       <div className="prose prose-invert max-w-none">
-                        <div className="whitespace-pre-wrap text-base leading-relaxed">{message.content}</div>
+                        <div className="whitespace-pre-wrap text-base leading-relaxed">
+                          {message.content}
+                        </div>
                       </div>
 
                       {message.imageUrl && (
                         <div className="mt-4">
                           <img
-                            src={message.imageUrl || "/placeholder.svg"}
+                            src={message.imageUrl || '/placeholder.svg'}
                             alt="AI生成的图像"
                             className="max-w-lg rounded-xl border border-white/20 shadow-2xl"
                           />
@@ -1114,10 +1176,10 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                               size="sm"
                               className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
                               onClick={() => {
-                                const link = document.createElement("a")
-                                link.href = message.imageUrl!
-                                link.download = `YYC3_AI_Generated_${Date.now()}.png`
-                                link.click()
+                                const link = document.createElement('a');
+                                link.href = message.imageUrl!;
+                                link.download = `YYC3_AI_Generated_${Date.now()}.png`;
+                                link.click();
                               }}
                             >
                               📥 下载图像
@@ -1125,7 +1187,7 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                             <Button
                               size="sm"
                               className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                              onClick={() => setUserInput("基于这张图片生成一个类似风格的变体")}
+                              onClick={() => setUserInput('基于这张图片生成一个类似风格的变体')}
                             >
                               🎨 生成变体
                             </Button>
@@ -1163,11 +1225,11 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                         <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"></div>
                         <div
                           className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
+                          style={{ animationDelay: '0.1s' }}
                         ></div>
                         <div
                           className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
+                          style={{ animationDelay: '0.2s' }}
                         ></div>
                       </div>
                       <span className="text-slate-300">AI正在智能分析并生成回复...</span>
@@ -1202,7 +1264,9 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                     <div className="text-center space-y-2">
                       <div className="text-2xl">{suggestion.icon}</div>
                       <div className="font-medium text-xs">{suggestion.title}</div>
-                      <div className="text-xs text-slate-400 line-clamp-2">{suggestion.description}</div>
+                      <div className="text-xs text-slate-400 line-clamp-2">
+                        {suggestion.description}
+                      </div>
                     </div>
                   </Button>
                 ))}
@@ -1225,9 +1289,9 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                   placeholder="💬 与YYC³ AI Center对话... 一句话调用任何功能！例如：'生成一张现代客厅图片'、'开启语音对话'、'分析数据'等"
                   className="min-h-[80px] bg-black/30 border-white/20 text-slate-100 placeholder-slate-400 resize-none backdrop-blur-md rounded-xl text-base"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSendMessage()
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
                     }
                   }}
                 />
@@ -1280,7 +1344,10 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
             {uploadedFiles.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {uploadedFiles.map((file, index) => (
-                  <Badge key={index} className="bg-white/10 text-slate-300 border-white/20 backdrop-blur-md">
+                  <Badge
+                    key={index}
+                    className="bg-white/10 text-slate-300 border-white/20 backdrop-blur-md"
+                  >
                     📄 {file.name}
                   </Badge>
                 ))}
@@ -1294,7 +1361,7 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setUserInput("开启语音交互功能")}
+                  onClick={() => setUserInput('开启语音交互功能')}
                   className="text-xs text-slate-400 hover:text-slate-200 h-6"
                 >
                   🎤 语音对话
@@ -1302,7 +1369,7 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setUserInput("生成一张现代科技风格的办公室图片")}
+                  onClick={() => setUserInput('生成一张现代科技风格的办公室图片')}
                   className="text-xs text-slate-400 hover:text-slate-200 h-6"
                 >
                   🎨 AI绘画
@@ -1310,7 +1377,7 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setUserInput("显示所有可用功能")}
+                  onClick={() => setUserInput('显示所有可用功能')}
                   className="text-xs text-slate-400 hover:text-slate-200 h-6"
                 >
                   ❓ 功能列表
@@ -1392,5 +1459,5 @@ ${fileArray.map((file, index) => `${index + 1}. **${file.name}** (${(file.size /
         />
       </div>
     </div>
-  )
+  );
 }
