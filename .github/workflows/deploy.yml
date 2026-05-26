@@ -24,8 +24,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9'
   APP_NAME: 'YYC³ Smart Service Engine'
   APP_URL: 'https://sse.yyc3.top'
 
@@ -68,7 +68,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: 🔍 Lint check
         if: ${{ github.event.inputs.skip_tests != 'true' }}

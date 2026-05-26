@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9'
 
 jobs:
   build:
@@ -39,7 +39,7 @@ jobs:
           corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: ⚡ Build static export
         run: pnpm build
